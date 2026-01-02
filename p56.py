@@ -46,8 +46,9 @@ class EventBus:
             handler(event)
 
 # ConcreteSubject:WeatherData
+from typing import Optional
 class WeatherData(Subject):
-    def __init__(self, event_bus: EventBus):
+    def __init__(self, event_bus: Optional[EventBus] = None):
         self._observers = []
         self._temperature = 0
         self._humidity = 0
@@ -76,12 +77,13 @@ class WeatherData(Subject):
         self.notifyObservers()
 
         #2.高溫警告
-        if temperature >= 35 and not self._high_temp_sent:
-            self._event_bus.publish(HighTemperatureEvent(temperature))
-            self._high_temp_sent = True
+        if self._event_bus: # 保護層, EventBus 可為 None
+            if temperature >= 35 and not self._high_temp_sent:
+                self._event_bus.publish(HighTemperatureEvent(temperature))
+                self._high_temp_sent = True
 
-        if temperature < 35:
-            self._high_temp_sent = False
+            if temperature < 35:
+                self._high_temp_sent = False
 
 
 # Concrete Observers(同時也是 Display)
@@ -126,7 +128,7 @@ class ForecastDisplay(Observer, DisplayElement):
 
     def display(self):
         print(f"[預報] 氣壓={self._pressure} -> 天氣變化中")
-"""
+
 # 實際執行
 
 weatherData = WeatherData()
@@ -137,7 +139,7 @@ forecast = ForecastDisplay(weatherData)
 
 weatherData.setMeasurements(25, 65, 1013)
 weatherData.setMeasurements(28, 70, 1009)
-"""
+
 # 新增的觀察者：HeatIndexDisplay
 class HeatIndexDisplay(Observer, DisplayElement):
     def __init__(self, weatherData: Subject):
@@ -164,7 +166,7 @@ class HeatIndexDisplay(Observer, DisplayElement):
 
     def display(self):
         print(f"[體感溫度] 酷熱指數為 {self._heatIndex:.2f} °C")
-"""
+
 # --- 執行部分 ---
 weatherData = WeatherData()
 
@@ -179,7 +181,7 @@ weatherData.setMeasurements(27, 80, 1013)
 
 print("\n第二次更新數據：")
 weatherData.setMeasurements(32, 85, 1013)
-"""
+
 
 
 # 新增:高溫警告系統(只吃 Event)
