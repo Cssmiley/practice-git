@@ -74,13 +74,27 @@ class Sugar(CondimentDecorator):
     
     def cost(self) -> float:
         return self._beverage.cost() + 5.0
+
+# 新需求超好加 【加一個 SOY,且LARGE + 25】
+class Soy(CondimentDecorator):
+    def get_description(self):
+        return self._beverage.get_description() + " + 豆漿"
     
+    def cost(self) -> float:
+        soy_price = {
+            Size.SMALL: 15,
+            Size.MEDIUM: 20,
+            Size.LARGE: 25
+        }
+        return self._beverage.cost() + soy_price[self.get_size()]
+    
+
 # 實際使用(重點來了)
 if __name__ == "__main__":
     beverage = Coffee(Size.MEDIUM)  # 中杯咖啡
     beverage = Milk(beverage)       # 加牛奶
     beverage = Sugar(beverage)      # 再加糖
-
+    beverage = Soy(beverage)        # 加豆漿
     print(beverage.get_description())
     print(f"總價: {beverage.cost()} 元")
     
