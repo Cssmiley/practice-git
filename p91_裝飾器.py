@@ -9,12 +9,37 @@ class Size(Enum):
     MEDIUM = "中杯"
     LARGE = "大杯"
 
+# 先定義加料核心表
+class AddonType(Enum):
+    SOY = "豆漿"
+    MILK = "牛奶"
+    SUGAR = "糖"
+
+# 加料價格資料(只改這裡就好)
+ADDON_PRICE_TABLE = {
+    AddonType.SOY:{
+        Size.SMALL:15,
+        Size.MEDIUM: 20,
+        Size.LARGE: 25,
+    },
+    AddonType.MILK:{
+        Size.SMALL: 8,
+        Size.MEDIUM: 10,
+        Size.LARGE: 12,
+    },
+    AddonType.SUGAR:{
+        Size.SMALL: 3,
+        Size.MEDIUM: 5,
+        Size.LARGE:7,
+    }
+}
+
 class Beverage(ABC):
     def __init__(self, size: Size):
-        self.size = size
+        self._size = size
     
     def get_size(self) -> Size:
-        return self.size
+        return self._size
     
     @abstractmethod
     def get_description(self) -> str:
@@ -31,7 +56,7 @@ class Coffee(Beverage):
         super().__init__(size)
 
     def get_description(self) -> str:
-        return f"{self.size.value} 咖啡"
+        return f"{self._size.value} 咖啡"
     
     def cost(self) -> float:
         base_price = {
@@ -39,7 +64,7 @@ class Coffee(Beverage):
             Size.MEDIUM: 60,
             Size.LARGE:70
         }
-        return base_price[self.size]
+        return base_price[self._size]
     
 # 3.Decorator(抽象裝飾者)
 """
@@ -50,51 +75,31 @@ class Coffee(Beverage):
 class CondimentDecorator(Beverage):
     def __init__(self, beverage: Beverage):
         self._beverage = beverage
+        super().__init__(beverage.get_size())
 
-    def get_size(self) -> Size:
-        return self._beverage.get_size()
-    
-# 4.ConcreteDecoratorA:牛奶
-class Milk(CondimentDecorator):
+# 通用 Decorator:Addon(只此一個)
+class Addon(CondimentDecorator):
+    def __init__(self, beverage: Beverage, addon_type:AddonType):
+        super().__init__(beverage)
+        self._addon_type = addon_type
+
     def get_description(self) -> str:
-        return self._beverage.get_description() + " + 牛奶"
-    
+        return (
+            self._beverage.get_description()
+            + " + "
+            + self._addon_type.value
+        )
     def cost(self) -> float:
-        milk_price = {
-            Size.SMALL: 10,
-            Size.MEDIUM: 15,
-            Size.LARGE: 20
-        }
-        return self._beverage.cost() + milk_price[self.get_size()]
-    
-# 5.ConcreteDecoratorB: 糖
-class Sugar(CondimentDecorator):
-    def get_description(self):
-        return self._beverage.get_description() + " + 糖"
-    
-    def cost(self) -> float:
-        return self._beverage.cost() + 5.0
-
-# 新需求超好加 【加一個 SOY,且LARGE + 25】
-class Soy(CondimentDecorator):
-    def get_description(self):
-        return self._beverage.get_description() + " + 豆漿"
-    
-    def cost(self) -> float:
-        soy_price = {
-            Size.SMALL: 15,
-            Size.MEDIUM: 20,
-            Size.LARGE: 25
-        }
-        return self._beverage.cost() + soy_price[self.get_size()]
+        addon_price = ADDON_PRICE_TABLE[self._addon_type][self.get_size()]
+        return self._beverage.cost() + addon_price
     
 
 # 實際使用(重點來了)
 if __name__ == "__main__":
     beverage = Coffee(Size.MEDIUM)  # 中杯咖啡
-    beverage = Milk(beverage)       # 加牛奶
-    beverage = Sugar(beverage)      # 再加糖
-    beverage = Soy(beverage)        # 加豆漿
+    beverage = Addon(beverage, AddonType.MILK)    # 加牛奶
+    beverage = Addon(beverage, AddonType.SUGAR)      # 再加糖
+    beverage = Addon(beverage, AddonType.SOY)    # 加豆漿
     print(beverage.get_description())
     print(f"總價: {beverage.cost()} 元")
     
